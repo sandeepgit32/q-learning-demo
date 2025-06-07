@@ -41,7 +41,7 @@ if "path_history" not in st.session_state:
 if "autoplay_active" not in st.session_state:
     st.session_state.autoplay_active = False
 if "autoplay_interval" not in st.session_state:
-    st.session_state.autoplay_interval = 1.5
+    st.session_state.autoplay_interval = 0.5
 if "autoplay_was_active_when_goal_reached" not in st.session_state:
     st.session_state.autoplay_was_active_when_goal_reached = False
 
@@ -249,13 +249,13 @@ if st.session_state.current_page == "Simulation":
                     st.rerun()
         with col_reset_grid:
             if st.button("🔄 Reset Grid Only", use_container_width=True): # Added use_container_width
-                current_interval = st.session_state.get("autoplay_interval", 1.5)
+                current_interval = st.session_state.get("autoplay_interval", 0.5)
                 reset_simulation_core_state(reset_q_table=False) # Grid Reset
                 st.session_state.autoplay_interval = current_interval
                 st.rerun()
         with col_hard_reset:
             if st.button("💥 Hard Reset", use_container_width=True): # Modified Button text for brevity, Added use_container_width
-                current_interval = st.session_state.get("autoplay_interval", 1.5)
+                current_interval = st.session_state.get("autoplay_interval", 0.5)
                 reset_simulation_core_state(reset_q_table=True) # Hard Reset
                 st.session_state.autoplay_interval = current_interval
                 st.rerun()
