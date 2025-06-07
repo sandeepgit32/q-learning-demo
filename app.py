@@ -324,7 +324,7 @@ if st.session_state.current_page == "Simulation":
             st.dataframe(df, use_container_width=True)
 
         st.subheader(f"Current Step Info (step = {st.session_state.step_count})")
-        st.write(f"- **Current State (s):** {state}")
+        st.write(f"- **Current State (s):** ({str(state[0])}, {str(state[1])})")
         action = st.session_state.last_action
         if action is not None:
             st.write(f"- **Action Taken (a):** {actions_map[action]}")
