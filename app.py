@@ -285,7 +285,47 @@ if st.session_state.current_page == "Simulation":
         if len(st.session_state.path_history) > 1:
             path_x = [p[1] + 0.5 for p in st.session_state.path_history]
             path_y = [grid_size - p[0] - 0.5 for p in st.session_state.path_history]
-            ax.plot(path_x, path_y, color="cyan", linewidth=1.5, alpha=0.6, linestyle='--')
+            ax.plot(path_x, path_y, color="cyan", linewidth=1.5, alpha=0.6, linestyle='--', zorder=1)
+
+            # Add arrow for the last transition
+            if st.session_state.last_action is not None:
+                s_prev = st.session_state.path_history[-2]
+                s_curr = st.session_state.path_history[-1] # This is the current st.session_state.state
+
+                x_prev_center = s_prev[1] + 0.5
+                y_prev_center = grid_size - s_prev[0] - 0.5
+
+                if s_prev != s_curr: # Agent successfully moved to a new cell
+                    x_curr_center = s_curr[1] + 0.5
+                    y_curr_center = grid_size - s_curr[0] - 0.5
+                    ax.annotate("",
+                                xy=(x_curr_center, y_curr_center),
+                                xytext=(x_prev_center, y_prev_center),
+                                arrowprops=dict(arrowstyle="->,head_length=0.7,head_width=0.3", color="yellowgreen", lw=2, shrinkA=6, shrinkB=6),
+                                zorder=3)
+                else: # Agent hit a wall (s_prev == s_curr)
+                    action_taken = st.session_state.last_action
+                    x_half_end = x_prev_center
+                    y_half_end = y_prev_center
+                    arrow_length = 0.35 # Length of the half-arrow, cell width/height is 1.0
+
+                    if action_taken == 0: # Tried to move Up (0 is '⬆️', decreasing row index, increasing y in plot)
+                        y_half_end = y_prev_center + arrow_length
+                    elif action_taken == 1: # Tried to move Down (1 is '⬇️', increasing row index, decreasing y in plot)
+                        y_half_end = y_prev_center - arrow_length
+                    elif action_taken == 2: # Tried to move Left (2 is '⬅️', decreasing col index, decreasing x in plot)
+                        x_half_end = x_prev_center - arrow_length
+                    elif action_taken == 3: # Tried to move Right (3 is '➡️', increasing col index, increasing x in plot)
+                        x_half_end = x_prev_center + arrow_length
+                    
+                    # Only draw if the calculated end point is actually different
+                    if x_prev_center != x_half_end or y_prev_center != y_half_end:
+                        ax.annotate("",
+                                    xy=(x_half_end, y_half_end),
+                                    xytext=(x_prev_center, y_prev_center),
+                                    arrowprops=dict(arrowstyle="->,head_length=0.3,head_width=0.2", color="red", lw=1.5, shrinkA=0, shrinkB=2),
+                                    zorder=3)
+
         for r_coord in range(grid_size):
             for c_coord in range(grid_size):
                 ax.text(c_coord + 0.8, grid_size - r_coord - 0.8, f"({r_coord},{c_coord})", ha="right", va="top", fontsize=8, color="gray", alpha=0.7)
