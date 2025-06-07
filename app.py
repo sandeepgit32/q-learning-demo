@@ -226,7 +226,7 @@ if st.session_state.current_page == "Simulation":
 """)
 
     st.subheader("Simulation") # Added line
-    with st.container(border=True): # Added container
+    with st.container(border=False): # Added container
         col_main_controls, col_reset_controls = st.columns([3, 1])
         with col_main_controls:
             col_next, col_auto_play_pause = st.columns(2)
