@@ -75,8 +75,9 @@ if "current_page" not in st.session_state:
 
 
 # --- Helper function to reset simulation state (core parts) ---
-def reset_simulation_core_state():
-    st.session_state.Q = np.zeros((grid_size, grid_size, 4), dtype=float) # Explicitly float
+def reset_simulation_core_state(reset_q_table: bool = True): # Modified signature
+    if reset_q_table:
+        st.session_state.Q = np.zeros((grid_size, grid_size, 4), dtype=float) # Explicitly float
     st.session_state.state = (0, 0)
     st.session_state.done = False
     st.session_state.last_action = None
@@ -164,7 +165,7 @@ st.sidebar.caption("Changing these values will reset the simulation.")
 if (st.session_state.alpha != initial_alpha_for_check or
     st.session_state.gamma != initial_gamma_for_check or
     st.session_state.epsilon != initial_epsilon_for_check):
-    reset_simulation_core_state()
+    reset_simulation_core_state(reset_q_table=True) # Ensure hard reset
     st.session_state.hyperparams_just_changed_warning = True
     st.rerun()
 
@@ -210,7 +211,7 @@ if st.session_state.current_page == "Reward Table":
 # --- Global Check for Reward Table Changes (runs after potential update from editor) ---
 if "reward_table" in st.session_state and "previous_reward_table" in st.session_state:
     if not np.array_equal(st.session_state.reward_table, st.session_state.previous_reward_table):
-        reset_simulation_core_state() 
+        reset_simulation_core_state(reset_q_table=True) # Ensure hard reset
         st.session_state.previous_reward_table = st.session_state.reward_table.copy() 
         st.session_state.rewards_just_changed_warning = True
         st.rerun() # Rerun to reflect reset and show warning in sidebar
@@ -227,37 +228,44 @@ if st.session_state.current_page == "Simulation":
 
     st.subheader("Simulation") # Added line
     with st.container(border=False): # Added container
-        col_main_controls, col_reset_controls = st.columns([3, 1])
-        with col_main_controls:
-            col_next, col_auto_play_pause = st.columns(2)
-            with col_next:
-                next_step_disabled = st.session_state.get("autoplay_active", False) or st.session_state.get("done", False)
-                if st.button("🚶 Take Next Step", disabled=next_step_disabled):
-                    if not st.session_state.get("done", False):
-                        step_q_learning()
-                        st.rerun()
-            with col_auto_play_pause:
-                if not st.session_state.get("autoplay_active", False):
-                    autoplay_disabled = st.session_state.get("done", False)
-                    if st.button("▶️ Autoplay", disabled=autoplay_disabled):
-                        st.session_state.autoplay_active = True
-                        st.session_state.autoplay_was_active_when_goal_reached = False
-                        st.rerun()
-                else:
-                    if st.button("⏸️ Pause"):
-                        st.session_state.autoplay_active = False
-                        st.rerun()
-            if st.session_state.get("done", False):
-                if st.session_state.get("autoplay_was_active_when_goal_reached", False):
-                     st.warning("🎉 Goal reached during autoplay! Autoplay has been paused. Click Reset to start over.")
-                else:
-                    st.success("🎉 Goal reached! Click Reset to start over.")
-        with col_reset_controls:
-            if st.button("🔄 Reset Simulation"):
-                current_interval = st.session_state.get("autoplay_interval", 1.5) 
-                reset_simulation_core_state()
+        col_next, col_auto_play_pause, col_reset_grid, col_hard_reset = st.columns(4)
+
+        with col_next:
+            next_step_disabled = st.session_state.get("autoplay_active", False) or st.session_state.get("done", False)
+            if st.button("🚶 Take Next Step", disabled=next_step_disabled, use_container_width=True): # Added use_container_width
+                if not st.session_state.get("done", False):
+                    step_q_learning()
+                    st.rerun()
+        with col_auto_play_pause:
+            if not st.session_state.get("autoplay_active", False):
+                autoplay_disabled = st.session_state.get("done", False)
+                if st.button("▶️ Autoplay", disabled=autoplay_disabled, use_container_width=True): # Added use_container_width
+                    st.session_state.autoplay_active = True
+                    st.session_state.autoplay_was_active_when_goal_reached = False
+                    st.rerun()
+            else:
+                if st.button("⏸️ Pause", use_container_width=True): # Added use_container_width
+                    st.session_state.autoplay_active = False
+                    st.rerun()
+        with col_reset_grid:
+            if st.button("🔄 Reset Grid Only", use_container_width=True): # Added use_container_width
+                current_interval = st.session_state.get("autoplay_interval", 1.5)
+                reset_simulation_core_state(reset_q_table=False) # Grid Reset
                 st.session_state.autoplay_interval = current_interval
                 st.rerun()
+        with col_hard_reset:
+            if st.button("💥 Hard Reset", use_container_width=True): # Modified Button text for brevity, Added use_container_width
+                current_interval = st.session_state.get("autoplay_interval", 1.5)
+                reset_simulation_core_state(reset_q_table=True) # Hard Reset
+                st.session_state.autoplay_interval = current_interval
+                st.rerun()
+
+        # Moved Goal reached messages outside the button columns
+        if st.session_state.get("done", False):
+            if st.session_state.get("autoplay_was_active_when_goal_reached", False):
+                 st.warning("🎉 Goal reached during autoplay! Autoplay has been paused. Click Reset to start over.")
+            else:
+                st.success("🎉 Goal reached! Click Reset to start over.")
 
     state = st.session_state.state
     grid_col, table_col = st.columns([1, 2])
